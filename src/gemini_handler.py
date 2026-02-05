@@ -71,25 +71,6 @@ class GeminiHandler:
             moving_date=user_facts.get("moving_date", "soon")
         )
 
-    def format_history_for_gemini(self, conversation_history: list[dict[str, str]]) -> list[dict[str, str]]:
-        """
-        Format conversation history for Gemini API.
-
-        Args:
-            conversation_history: List of conversation messages
-
-        Returns:
-            Formatted history for Gemini
-        """
-        formatted: list[dict[str, str | list[str]]] = []
-        for msg in conversation_history:
-            # Map 'model' role to 'model' and 'user' role to 'user'
-            formatted.append({
-                "role": msg["role"],
-                "parts": [msg["content"]]
-            })
-        return formatted
-
     async def _execute_function_call(self, function_call: Any) -> dict[str, Any]:
         """
         Execute a function call requested by the model.

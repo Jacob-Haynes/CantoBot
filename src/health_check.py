@@ -5,7 +5,7 @@ import json
 import asyncio
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
-from typing import Callable, Awaitable
+from typing import Any, Callable, Awaitable
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
 
     health_check_func: Callable[[], Awaitable[dict[str, bool | str]]] | None = None
 
-    def log_message(self, format: str, *args: any) -> None:
+    def log_message(self, format: str, *args: Any) -> None:
         """Override to use our logger instead of stderr."""
         logger.debug(f"{self.address_string()} - {format % args}")
 

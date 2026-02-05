@@ -141,5 +141,5 @@ else
     echo -e "${YELLOW}⚠${NC} Service is not running (may not be installed yet)"
     echo ""
     echo -e "${GREEN}=== Deployment Complete ===${NC}"
-    echo "To run the bot manually: source .venv/bin/activate && python src/main.py"
+    echo "To run the bot manually: source .venv/bin/activate && python -m src.main"
 fi

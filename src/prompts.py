@@ -1,8 +1,5 @@
 """System prompts, constants, and message templates for the Cantonese AI Tutor Bot."""
 
-# Gemini Configuration
-GEMINI_MODEL_NAME = "gemini-1.5-flash"
-
 # TTS Configuration
 TTS_VOICE_NAME = "zh-HK-HiuGaaiNeural"  # Female voice, clear pronunciation
 TTS_VOICE_NAME_ALT = "zh-HK-WanLungNeural"  # Male alternative
