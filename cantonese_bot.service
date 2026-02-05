@@ -5,10 +5,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/CantoBot
-Environment="PATH=/home/pi/CantoBot/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=/home/pi/CantoBot/.venv/bin/python3 -m src.main
+User=notah-pi
+WorkingDirectory=/home/notah-pi/CantoBot
+Environment="PATH=/home/notah-pi/CantoBot/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/notah-pi/CantoBot/.venv/bin/python3 -m src.main
 Restart=always
 RestartSec=10
 StandardOutput=journal
