@@ -85,3 +85,5 @@ Desktop.ini
 # Test databases
 test.db
 *.db-test
+
+.claude
