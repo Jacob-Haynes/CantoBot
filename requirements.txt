@@ -1,0 +1,9 @@
+# Requires Python 3.11 or higher
+python-telegram-bot[job-queue]>=21.0
+google-genai>=1.0.0
+edge-tts>=7.0.0
+aiosqlite>=0.20.0
+python-dotenv>=1.0.0
+pycantonese>=3.4.0
+httpx>=0.28.0
+setuptools>=80.0.0
