@@ -20,7 +20,6 @@ from telegram.ext import (
 
 from .config import Config
 from .database import DatabaseManager
-from .gemini_handler import GeminiHandler
 from .tts_handler import TTSHandler
 from .health_check import HealthCheckServer
 from .prompts import (
@@ -31,6 +30,43 @@ from .prompts import (
     ERROR_TTS_GENERATION,
     TEMP_DIR
 )
+
+
+def get_ai_handler(config: Config) -> Any:
+    """
+    Factory function to create the appropriate AI handler based on config.
+
+    Args:
+        config: Application configuration
+
+    Returns:
+        Either GeminiHandler or OllamaHandler instance
+    """
+    if config.model_backend == "ollama":
+        from .ollama_handler import OllamaHandler
+
+        # Setup Whisper handler if voice is enabled
+        whisper_handler = None
+        if config.enable_voice:
+            try:
+                from .whisper_handler import WhisperHandler
+                whisper_handler = WhisperHandler(config.whisper_model)
+            except ImportError as e:
+                logging.getLogger(__name__).warning(
+                    f"faster-whisper not available, voice disabled: {e}"
+                )
+
+        return OllamaHandler(
+            host=config.ollama_host,
+            model=config.ollama_model,
+            whisper_handler=whisper_handler
+        )
+    else:
+        from .gemini_handler import GeminiHandler
+        return GeminiHandler(
+            config.google_api_key,
+            config.gemini_model
+        )
 
 # Logger will be configured after loading config
 logger = logging.getLogger(__name__)
@@ -58,10 +94,7 @@ class CantoneseBot:
 
         # Initialize components
         self.db: DatabaseManager = DatabaseManager(self.config.db_path)
-        self.gemini: GeminiHandler = GeminiHandler(
-            self.config.google_api_key,
-            self.config.gemini_model
-        )
+        self.ai_handler = get_ai_handler(self.config)
         self.tts: TTSHandler = TTSHandler()
 
         # Store allowed user ID for decorator
@@ -122,8 +155,8 @@ class CantoneseBot:
             conversation_history: list[dict[str, str]] = await self.db.get_recent_history()
             user_facts: dict[str, str] = await self.db.get_user_facts()
 
-            # Process audio with Gemini
-            response_text: str = await self.gemini.process_audio(
+            # Process audio with AI handler
+            response_text: str = await self.ai_handler.process_audio(
                 audio_file_path,
                 conversation_history,
                 user_facts
@@ -173,8 +206,8 @@ class CantoneseBot:
             conversation_history: list[dict[str, str]] = await self.db.get_recent_history()
             user_facts: dict[str, str] = await self.db.get_user_facts()
 
-            # Process text with Gemini
-            response_text: str = await self.gemini.process_text(
+            # Process text with AI handler
+            response_text: str = await self.ai_handler.process_text(
                 update.message.text,
                 conversation_history,
                 user_facts

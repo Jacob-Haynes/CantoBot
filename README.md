@@ -1,8 +1,10 @@
 # Cantonese AI Tutor Bot
 
-A persistent, always-on AI Cantonese tutor running on Raspberry Pi 5, bridging Telegram and Google Gemini with voice-to-voice capabilities, autonomous tool calling, and persistent memory.
+A persistent, always-on AI Cantonese tutor running on Raspberry Pi 5 with voice-to-voice capabilities, autonomous tool calling, and persistent memory.
 
-Note - easily adaptable to using a locally run model, I have had this working with qwen3 8B running locally on the pi. 
+**Supports two AI backends:**
+- **Google Gemini** (cloud) - Default, multimodal with built-in audio transcription
+- **Ollama** (local) - Run Qwen3 8B locally on Pi 5 for privacy and offline use 
 
 ## Features
 
@@ -37,9 +39,12 @@ The bot autonomously decides when to use these tools based on natural conversati
 │  ┌───────────────────────────────────┐  │
 │  │  Cantonese Bot (Python)           │  │
 │  │  ├─ Telegram Bot Handler          │  │
-│  │  ├─ Google Gemini (Configurable)  │  │
-│  │  │  - Multimodal (Audio → Text)   │  │
-│  │  │  - Autonomous Tool Calling     │  │
+│  │  ├─ AI Backend (configurable)     │  │
+│  │  │  ├─ Google Gemini (cloud)      │  │
+│  │  │  │  - Multimodal transcription │  │
+│  │  │  └─ Ollama + Whisper (local)   │  │
+│  │  │     - Qwen3 8B + faster-whisper│  │
+│  │  ├─ Autonomous Tool Calling       │  │
 │  │  ├─ PyCantonese (Dictionary)      │  │
 │  │  ├─ Edge TTS (Text → Cantonese)   │  │
 │  │  └─ SQLite Database               │  │
@@ -52,7 +57,12 @@ The bot autonomously decides when to use these tools based on natural conversati
 
 ### Technology Stack
 
-- **AI Model**: Google Gemini (configurable: 1.5-flash, 2.0-flash-exp, 2.5-flash)
+- **AI Backend** (configurable):
+  - Google Gemini (cloud): 1.5-flash, 2.0-flash-exp, 2.5-flash
+  - Ollama (local): Qwen3 8B, Llama 3.2, Phi-3, etc.
+- **Audio Transcription**:
+  - Gemini: Built-in multimodal
+  - Ollama: faster-whisper (local)
 - **NLP Library**: PyCantonese (53k+ word dictionary with Jyutping)
 - **TTS**: Edge TTS (zh-HK-HiuGaaiNeural voice)
 - **Database**: SQLite with WAL mode
@@ -96,21 +106,30 @@ Edit `.env` with your credentials:
 # Get from @BotFather on Telegram
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 
-# Get from https://aistudio.google.com/apikey
-GOOGLE_API_KEY=your_google_api_key_here
-
 # Your Telegram user ID (message @userinfobot to find it)
 ALLOWED_USER_ID=your_telegram_user_id_here
 
-# Model selection (optional, default: gemini-2.0-flash-exp)
-# Options: gemini-1.5-flash, gemini-2.0-flash-exp, gemini-2.5-flash
-GEMINI_MODEL=gemini-2.0-flash-exp
+# --- Backend Selection (choose one) ---
 
-# Optional settings
+# Option 1: Google Gemini (default, cloud-based)
+MODEL_BACKEND=gemini
+GOOGLE_API_KEY=your_google_api_key_here  # Get from https://aistudio.google.com/apikey
+GEMINI_MODEL=gemini-2.0-flash-exp        # Options: gemini-1.5-flash, gemini-2.0-flash-exp, gemini-2.5-flash
+
+# Option 2: Ollama (local, runs on Pi 5)
+# MODEL_BACKEND=ollama
+# OLLAMA_HOST=http://localhost:11434
+# OLLAMA_MODEL=qwen3:8b-q4_K_M
+# WHISPER_MODEL=base                     # For voice transcription: tiny, base, small
+# ENABLE_VOICE=true                      # Set to false to disable voice messages
+
+# --- General Settings ---
 DB_PATH=data/cantonese_tutor.db
 LOG_LEVEL=INFO
 HEALTH_CHECK_PORT=8080
 ```
+
+See [docs/OLLAMA_SETUP.md](docs/OLLAMA_SETUP.md) for detailed local model setup instructions.
 
 ### Run
 
@@ -366,6 +385,41 @@ Features:
 - MP3 output to `temp/` directory
 - Automatic cleanup after sending
 
+### Local Model Support (Ollama)
+
+Run CantoBot entirely locally on Raspberry Pi 5 using Ollama:
+
+**Benefits:**
+- No API costs
+- Complete privacy (data never leaves device)
+- Offline capability
+- ~10-30 second response times on Pi 5
+
+**Quick Setup:**
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull model (~5GB download)
+ollama pull qwen3:8b-q4_K_M
+
+# Install voice transcription (optional)
+pip install faster-whisper
+
+# Configure .env
+MODEL_BACKEND=ollama
+```
+
+**Resource Usage (Pi 5 8GB):**
+| Component | RAM |
+|-----------|-----|
+| Qwen3 8B Q4 | ~5GB |
+| Whisper base | ~300MB |
+| Bot + System | ~1.1GB |
+| **Total** | ~6.4GB |
+
+See [docs/OLLAMA_SETUP.md](docs/OLLAMA_SETUP.md) for complete setup guide.
+
 ## Development
 
 ### Project Structure
@@ -373,14 +427,18 @@ Features:
 ```
 CantoBot/
 ├── src/
-│   ├── main.py              # Bot orchestration
+│   ├── main.py              # Bot orchestration + handler factory
 │   ├── config.py            # Environment configuration
 │   ├── database.py          # SQLite manager
-│   ├── gemini_handler.py    # Gemini API + tool calling
+│   ├── gemini_handler.py    # Google Gemini API backend
+│   ├── ollama_handler.py    # Ollama local model backend
+│   ├── whisper_handler.py   # Local audio transcription
 │   ├── tts_handler.py       # Edge TTS synthesis
 │   ├── tools.py             # Autonomous tool functions
 │   ├── health_check.py      # HTTP health endpoint
 │   └── prompts.py           # System prompts
+├── docs/
+│   └── OLLAMA_SETUP.md      # Local model setup guide
 ├── data/                    # SQLite database (gitignored)
 ├── temp/                    # Temp audio files (gitignored)
 ├── test_migration.py        # Test tools without Telegram
@@ -566,9 +624,9 @@ This bot recently migrated from `google-generativeai` to `google-genai` (January
 
 ## Hardware Requirements
 
-- **Raspberry Pi 5**: 4GB+ RAM (8GB recommended)
-- **Storage**: 16GB+ SD card (32GB recommended, Class 10+)
-- **Network**: Stable broadband (voice requires ~1-2 Mbps)
+- **Raspberry Pi 5**: 4GB+ RAM (8GB required for local Ollama backend)
+- **Storage**: 16GB+ SD card (32GB+ recommended for local models)
+- **Network**: Stable broadband (Gemini), or none (Ollama after setup)
 - **Power**: Official 27W USB-C power supply
 - **OS**: Raspberry Pi OS (Bookworm/Trixie) with Python 3.11+
 
@@ -576,13 +634,16 @@ This bot recently migrated from `google-generativeai` to `google-genai` (January
 
 See `requirements.txt`:
 - `python-telegram-bot[job-queue]>=21.0` - Telegram bot framework
-- `google-genai>=1.0.0` - Google Gemini API (NEW)
+- `google-genai>=1.0.0` - Google Gemini API
 - `pycantonese>=3.4.0` - Cantonese NLP library
 - `edge-tts>=7.0.0` - Text-to-speech
 - `aiosqlite>=0.20.0` - Async SQLite
-- `httpx>=0.28.0` - HTTP client for dictionary APIs
+- `httpx>=0.28.0` - HTTP client (Ollama + dictionary APIs)
 - `python-dotenv>=1.0.0` - Environment configuration
 - `setuptools>=80.0.0` - PyCantonese compatibility
+
+**Optional (for local Ollama backend):**
+- `faster-whisper>=1.0.0` - Local audio transcription
 
 ## Contributing
 
@@ -594,7 +655,10 @@ MIT License - See LICENSE file for details
 
 ## Acknowledgments
 
-- **Google Gemini**: AI model for conversation and transcription
+- **Google Gemini**: Cloud AI for conversation and transcription
+- **Ollama**: Local LLM inference engine
+- **Qwen3**: Excellent multilingual model from Alibaba
+- **faster-whisper**: Efficient local speech recognition
 - **PyCantonese**: Open-source Cantonese NLP (Jackson L. Lee)
 - **Edge TTS**: Free neural Cantonese voices
 - **python-telegram-bot**: Excellent Telegram bot framework

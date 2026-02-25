@@ -7,3 +7,6 @@ python-dotenv>=1.0.0
 pycantonese>=3.4.0
 httpx>=0.28.0
 setuptools>=80.0.0
+
+# Optional: For local Ollama backend with voice support
+# pip install faster-whisper>=1.0.0

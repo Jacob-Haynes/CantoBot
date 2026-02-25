@@ -18,14 +18,28 @@ class Config:
     db_path: str
     log_level: int
     health_check_port: int
+    # Ollama configuration
+    model_backend: str
+    ollama_host: str
+    ollama_model: str
+    whisper_model: str
+    enable_voice: bool
 
     def __init__(self) -> None:
         # Load environment variables from .env file
         load_dotenv()
 
+        # Model backend selection (gemini or ollama)
+        self.model_backend: str = os.getenv("MODEL_BACKEND", "gemini").lower()
+
         # Required configuration
         self.telegram_bot_token: str = self._get_required_env("TELEGRAM_BOT_TOKEN")
-        self.google_api_key: str = self._get_required_env("GOOGLE_API_KEY")
+
+        # Google API key only required for Gemini backend
+        if self.model_backend == "gemini":
+            self.google_api_key: str = self._get_required_env("GOOGLE_API_KEY")
+        else:
+            self.google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
 
         # Parse allowed user ID
         user_id_str: str = self._get_required_env("ALLOWED_USER_ID")
@@ -48,6 +62,15 @@ class Config:
             self.health_check_port: int = int(health_check_port_str)
         except ValueError:
             raise ValueError(f"HEALTH_CHECK_PORT must be an integer, got: {health_check_port_str}")
+
+        # Ollama configuration (used when MODEL_BACKEND=ollama)
+        self.ollama_host: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        self.ollama_model: str = os.getenv("OLLAMA_MODEL", "qwen3:8b-q4_K_M")
+        self.whisper_model: str = os.getenv("WHISPER_MODEL", "base")
+
+        # Parse enable_voice boolean
+        enable_voice_str: str = os.getenv("ENABLE_VOICE", "true").lower()
+        self.enable_voice: bool = enable_voice_str in ("true", "1", "yes")
 
         # Ensure database directory exists
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
