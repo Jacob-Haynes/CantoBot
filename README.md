@@ -2,6 +2,8 @@
 
 A persistent, always-on AI Cantonese tutor running on Raspberry Pi 5, bridging Telegram and Google Gemini with voice-to-voice capabilities, autonomous tool calling, and persistent memory.
 
+Note - easily adaptable to using a locally run model, I have had this working with qwen3 8B running locally on the pi. 
+
 ## Features
 
 ### Core Capabilities
